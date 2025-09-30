@@ -1,1 +1,5 @@
-﻿
+﻿id,year,branch,section,registeredCourses
+301,2,CSE,A,"101;102"
+302,2,CSE,A,"101"
+303,3,DSAI,B,"102"
+304,3,ECE,A,"102"

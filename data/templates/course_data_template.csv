@@ -1,1 +1,3 @@
-﻿
+﻿id,name,credits,instructorId,type,enrolledStudents
+101,Data Structures,4,201,core,"301;302"
+102,Operating Systems,3,202,elective,"303;304"
