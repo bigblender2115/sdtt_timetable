@@ -13,18 +13,20 @@
 
 ## Project Structure
 
+```
 SDTT_Timetable/
 ├── data/
-│   └── templates/                  # CSV templates for input data
+│   └── templates/
 ├── timetable/
-│   ├── models/                      # Data models (Course, Exam, Faculty, etc.)
-│   ├── scheduler/                   # Scheduling logic and constraints
-│   ├── utils/                        # I/O, validation, and visualization utilities
-│   ├── config.py                     # Project configuration
-│   └── main.py                       # Entry point for the project
-├── tests/                            # Unit tests
+│   ├── models/
+│   ├── scheduler/
+│   ├── utils/
+│   ├── config.py
+│   └── main.py
+├── tests/
 ├── LICENSE
 ├── README.md
 ├── pyproject.toml
 ├── requirements.txt
 └── setup.py
+```
