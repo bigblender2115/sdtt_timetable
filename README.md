@@ -96,16 +96,3 @@ Basket electives (B1–B4) are grouped in **fixed time slots** across all branch
 | **NaN values** | Empty cells in CSV | Defaults to `0` (hours) or `60` (students) |
 | **Unscheduled courses** | Conflicts or no available room | Check the **"Unscheduled Components"** sheet in the output |
 
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**.  
-Feel free to use, modify, and distribute it for academic or institutional use.
-
----
-
-## 💡 Example Tip
-
-If you want to regenerate only for a specific department or semester,  
-you can filter your CSV files accordingly — the script automatically adapts.
