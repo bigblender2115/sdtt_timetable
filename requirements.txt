@@ -1,5 +1,0 @@
-﻿pandas
-ortools
-numpy
-streamlit
-pytest
