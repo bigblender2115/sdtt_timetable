@@ -1,81 +1,111 @@
-Timetable Generator
-This Python script generates a timetable for academic courses, scheduling lectures, tutorials, labs, and self-study sessions while handling basket electives (B1, B2, B3, B4) in fixed time slots across all branches for a given semester.
-Features
+# 🗓️ Timetable Generator
 
-Input Files: Reads course data from courses.csv and room data from classrooms.csv.
-Basket Electives: Schedules all electives within the same basket group (e.g., B1-001, B1-002) in a single slot:
-B1: 9:00-10:30
-B2: 10:30-12:00
-B3: 14:00-15:30
-B4: 15:30-17:00
+A Python script to **generate academic timetables**, scheduling lectures, tutorials, labs, and self-study sessions.  
+Basket electives (B1–B4) are grouped in **fixed time slots** across all branches for a semester.
 
+---
 
-Room Allocation: Assigns rooms based on course type and student capacity.
-Lunch Breaks: Staggers lunch breaks between 12:30-14:00 for different semesters.
-Output: Generates an Excel file (timetable.xlsx) with formatted timetables, including color-coded courses, breaks, and a legend.
-Error Handling: Uses default data if input files are missing or contain errors (e.g., NaN values).
+## 🚀 Features
 
-Requirements
+- Reads **course data (`courses.csv`)** and **room data (`classrooms.csv`)**
+- Schedules **basket electives** in fixed slots:
+  - **B1:** 9:00–10:30  
+  - **B2:** 10:30–12:00  
+  - **B3:** 14:00–15:30  
+  - **B4:** 15:30–17:00
+- Assigns rooms based on course type and student capacity  
+- Staggers **lunch breaks (12:30–14:00)**  
+- Outputs `timetable.xlsx` with **color-coded schedules and legend**
+- Handles **missing files** or **NaN values** with sensible defaults
 
-Python 3.8+
-Libraries: pandas, openpyxl
+---
 
-Install dependencies:
-pip install pandas openpyxl
+## 🧩 Requirements
 
-Input Files
-
-courses.csv:
-
-Columns: Department, Semester, Course Code, Course Name, Faculty, L (lecture hours), T (tutorial hours), P (practical hours), S (self-study hours), total_students
-Example:Department,Semester,Course Code,Course Name,Faculty,L,T,P,S,total_students
-CSE,3,CS101,Intro to CS,Prof A,3,1,2,0,140
-ECE,3,B1-001,Elective 1A,Prof C,2,0,0,0,35
+- **Python 3.8+**
+- Libraries:  
+  ```bash
+  pip install pandas openpyxl
 
 
+## 📂 Input Files
 
+### `courses.csv`
 
-classrooms.csv:
+| Department | Semester | Course Code | Course Name   | Faculty | L | T | P | S | total_students |
+|-------------|-----------|--------------|----------------|----------|---|---|---|----------------|
+| CSE | 3 | CS101 | Intro to CS | Prof A | 3 | 1 | 2 | 0 | 140 |
+| ECE | 3 | B1-001 | Elective 1A | Prof C | 2 | 0 | 0 | 0 | 35 |
 
-Columns: id, capacity, type, roomNumber
-Example:id,capacity,type,roomNumber
-R1,70,LECTURE_ROOM,R101
-L1,35,COMPUTER_LAB,L101
+---
 
+### `classrooms.csv`
 
+| id | capacity | type | roomNumber |
+|----|-----------|----------------|-------------|
+| R1 | 70 | LECTURE_ROOM | R101 |
+| L1 | 35 | COMPUTER_LAB | L101 |
 
+## ⚙️ Usage
 
+1. Place the input files — **`courses.csv`** and **`classrooms.csv`** — in the same directory as **`timetable_generator.py`**.
 
-Usage
+2. Run the script using Python:
+   ```bash
+   python timetable_generator.py
 
-Place courses.csv and classrooms.csv in the same directory as the script.
-Run the script:python timetable_generator.py
+## 📊 Output
 
+- **File:** `timetable.xlsx`
+- **Contents:** One sheet per department-semester-section (e.g., `CSE_3_A`)
+- **Includes:**
+  - Timetable grid (9:00–18:30, Monday–Friday)
+  - Color-coded courses (basket electives and regular)
+  - Lunch breaks in gray
+  - Self-study courses and unscheduled components
+  - Legend for color codes
 
-Check the output timetable.xlsx for the generated timetable.
+---
 
-Output
+## 🎨 Color Codes
 
-timetable.xlsx: Contains one sheet per department-semester-section (e.g., CSE_3_A).
-Each sheet includes:
-Timetable grid with days and time slots (9:00-18:30).
-Color-coded courses (basket electives and regular courses).
-Lunch breaks marked in gray.
-Self-study courses listed below the timetable.
-Unscheduled components with reasons (if any).
-Legend with course codes, names, faculty, and colors.
+| Category | Color |
+|-----------|--------|
+| **B1** | Soft Coral |
+| **B2** | Mint |
+| **B3** | Pale Blue |
+| **B4** | Warm Yellow |
+| **Others** | Light Pastels |
 
+---
 
+## 🧠 Notes
 
-Notes
+- Basket electives (e.g., `B1-001`, `B1-002`) share a **single slot** across all branches.
+- Defaults are used if input files are missing.
+- Ensure **room capacity** is sufficient for basket electives.
+- The script auto-handles missing or incomplete data gracefully.
 
-Basket electives are grouped by basket (B1, B2, B3, B4) and scheduled in fixed slots across all branches in a semester.
-Colors are visually appealing (soft coral, mint, pale blue, warm yellow for baskets; pastel shades for others).
-If input files are missing, the script uses default data (sample courses and rooms).
-Ensure sufficient room capacity for basket electives, as they combine students from multiple branches.
+---
 
-Troubleshooting
+## 🧰 Troubleshooting
 
-Missing Files: The script will use default data and print warnings.
-NaN Values: Handled by filling with defaults (e.g., 0 for hours, 60 for students).
-Unscheduled Courses: Check the "Unscheduled Components" section in the output for conflicts or insufficient rooms.
+| Issue | Cause | Fix |
+|--------|--------|-----|
+| **Missing files** | `courses.csv` or `classrooms.csv` not found | Script uses default data and prints a warning |
+| **NaN values** | Empty cells in CSV | Defaults to `0` (hours) or `60` (students) |
+| **Unscheduled courses** | Conflicts or no available room | Check the **"Unscheduled Components"** sheet in the output |
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**.  
+Feel free to use, modify, and distribute it for academic or institutional use.
+
+---
+
+## 💡 Example Tip
+
+If you want to regenerate only for a specific department or semester,  
+you can filter your CSV files accordingly — the script automatically adapts.
