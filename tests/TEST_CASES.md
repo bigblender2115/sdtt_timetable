@@ -2,7 +2,7 @@
 
 | Test case input | Description | Expected output |
 | --- | --- | --- |
-| `generate_time_slots()` | Generates half-hour slots between `START_TIME` and `END_TIME` | 19 slots; first `(09:00,09:30)`, last `(18:00,18:30)` |
+| `generate_time_slots()` | Generates 30‑minute base slots; lectures/labs span multiple base slots | 19 slots; first `(09:00,09:30)`, last `(18:00,18:30)` |
 | `calculate_lunch_breaks([3])` | Single semester lunch window | `lunch_breaks[3]` starts `12:30`, duration `60` mins |
 | `calculate_lunch_breaks([3,5])` | Two semesters staggered | starts: `[12:30, 13:00]`, each 60 mins |
 | `calculate_lunch_breaks([3,5,7])` | Three semesters staggered | starts: `[12:30, 12:45, 13:00]`, each 60 mins |
