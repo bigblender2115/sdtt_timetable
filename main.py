@@ -91,7 +91,7 @@ def load_rooms():
         'S1': {'capacity': 120, 'type': 'SEATER_120', 'roomNumber': 'S101', 'schedule': {day: set() for day in range(len(DAYS))}}
     }
     try:
-        with open('classrooms.csv', 'r') as f:
+        with open('Rooms.csv', 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 rooms[row['id']] = {
@@ -101,10 +101,10 @@ def load_rooms():
                     'schedule': {day: set() for day in range(len(DAYS))}
                 }
     except FileNotFoundError:
-        print("Warning: classrooms.csv not found, using default rooms")
+        print("Warning: Rooms.csv not found, using default rooms")
         return default_rooms
     except Exception as e:
-        print(f"Warning: Error reading classrooms.csv: {e}, using default rooms")
+        print(f"Warning: Error reading Rooms.csv: {e}, using default rooms")
         return default_rooms
     return rooms
 
@@ -272,10 +272,10 @@ def generate_timetable():
     TIME_SLOTS = generate_time_slots()
     rooms = load_rooms()
     try:
-        df = pd.read_csv('courses.csv')
+        df = pd.read_csv('Combined.csv')
         df = df.fillna({'L': 0, 'T': 0, 'P': 0, 'S': 0, 'total_students': 60, 'Course Code': 'UNKNOWN', 'Course Name': 'Unknown Course', 'Faculty': 'Unknown Faculty'})
     except FileNotFoundError:
-        print("Warning: courses.csv not found, using default course data")
+        print("Warning: Combined.csv not found, using default course data")
         df = pd.DataFrame([            {'Department': 'CSE', 'Semester': 3, 'Course Code': 'CS101', 'Course Name': 'Intro to CS', 'Faculty': 'Prof A', 'L': 3, 'T': 1, 'P': 2, 'S': 0, 'total_students': 140},
             {'Department': 'ECE', 'Semester': 3, 'Course Code': 'EC101', 'Course Name': 'Electronics', 'Faculty': 'Prof B', 'L': 3, 'T': 0, 'P': 2, 'S': 0, 'total_students': 70},
             {'Department': 'CSE', 'Semester': 3, 'Course Code': 'B1-001', 'Course Name': 'Elective 1A', 'Faculty': 'Prof C', 'L': 2, 'T': 0, 'P': 0, 'S': 0, 'total_students': 35},
@@ -347,10 +347,17 @@ def generate_timetable():
                             for i in range(duration):
                                 professor_schedule[faculty][day].add(start_slot + i)
                                 timetable[day][start_slot + i]['type'] = 'LEC'
-                                timetable[day][start_slot + i]['code'] = code if i == 0 else ''
-                                timetable[day][start_slot + i]['name'] = name if i == 0 else ''
-                                timetable[day][start_slot + i]['faculty'] = faculty if i == 0 else ''
-                                timetable[day][start_slot + i]['classroom'] = room_id if i == 0 else ''
+                                # For basket electives, display the basket group (e.g., B1) instead of course details
+                                if i == 0:
+                                    timetable[day][start_slot + i]['code'] = basket_group
+                                    timetable[day][start_slot + i]['name'] = ''
+                                    timetable[day][start_slot + i]['faculty'] = ''
+                                    timetable[day][start_slot + i]['classroom'] = ''
+                                else:
+                                    timetable[day][start_slot + i]['code'] = ''
+                                    timetable[day][start_slot + i]['name'] = ''
+                                    timetable[day][start_slot + i]['faculty'] = ''
+                                    timetable[day][start_slot + i]['classroom'] = ''
                 # Schedule non-basket courses
                 non_basket_courses = courses[~courses['Course Code'].astype(str).str.contains('^B[0-9]')]
                 for _, course in non_basket_courses.iterrows():
@@ -420,7 +427,14 @@ def generate_timetable():
                             faculty = timetable[day_idx][slot_idx]['faculty']
                             if code:
                                 duration = {'LEC': LECTURE_DURATION, 'LAB': LAB_DURATION, 'TUT': TUTORIAL_DURATION, 'SS': SELF_STUDY_DURATION}.get(activity_type, 1)
-                                cell_fill = PatternFill(start_color=subject_color_map.get(code, "E6E6FA"), end_color=subject_color_map.get(code, "E6E6FA"), fill_type="solid")
+                                # Choose color: basket groups use basket_group_colors; otherwise subject-specific color
+                                fill_color = subject_color_map.get(code, "E6E6FA")
+                                if code in ['B1', 'B2', 'B3', 'B4']:
+                                    fill_color = basket_group_colors.get(code, fill_color)
+                                elif is_basket_course(code):
+                                    grp = get_basket_group(code)
+                                    fill_color = basket_group_colors.get(grp, fill_color)
+                                cell_fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
                                 cell_value = f"{code} {activity_type}\n{classroom}\n{faculty}"
                                 if duration > 1:
                                     start_col = get_column_letter(slot_idx + 2)
