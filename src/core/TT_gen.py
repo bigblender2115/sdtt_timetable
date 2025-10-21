@@ -43,9 +43,26 @@ BASKET_GROUP_COLORS = {
     'B9': "70A1D7"   # Blue
 }
 
+# Fixed slots for basket electives
+BASKET_SLOTS = {
+    'B1': 0,   # 9:00-10:30
+    'B2': 3,   # 10:30-12:00
+    'B3': 7,   # 14:00-15:30 (post-lunch)
+    'B4': 10,  # 15:30-17:00
+    'B5': 13,  # 16:30-18:00
+    'B6': 16,  # 18:00-19:30 (if needed)
+    'B7': 19,  # 19:30-21:00 (if needed)
+    'B8': 22,  # 21:00-22:30 (if needed)
+    'B9': 25   # 22:30-24:00 (if needed)
+}
+
 # Load room data
 try:
-    rooms_df = pd.read_csv('rooms.csv')
+    # Try data directory first, then fallback to current directory
+    try:
+        rooms_df = pd.read_csv('data/rooms.csv')
+    except FileNotFoundError:
+        rooms_df = pd.read_csv('rooms.csv')
     # Create separate lists for lecture rooms and lab rooms
     lecture_rooms = rooms_df[rooms_df['type'] == 'LECTURE_ROOM']['roomNumber'].tolist()
     computer_lab_rooms = rooms_df[rooms_df['type'] == 'COMPUTER_LAB']['roomNumber'].tolist()
@@ -59,7 +76,7 @@ try:
     if not large_rooms:
         print("Warning: No SEATER_120 type rooms found in rooms.csv")
 except FileNotFoundError:
-    print("Error: File 'rooms.csv' not found in the current directory")
+    print("Error: File 'rooms.csv' not found in data/ or current directory")
     lecture_rooms = []
     computer_lab_rooms = []
     large_rooms = []
@@ -71,7 +88,7 @@ except Exception as e:
 
 def generate_course_color():
     """Generate unique colors for courses from the palette or random if needed"""
-    for color in COLOR_PALETTE:
+    for color in MODERN_COLORS:
         yield color
     
     # If we run out of predefined colors, generate random ones
@@ -715,7 +732,7 @@ def generate_all_timetables():
                                 # Create merge range
                                 if duration > 1:
                                     start_col = get_column_letter(slot_idx + 2)
-                                    end_col = get_column_letter(slotIdx + duration + 1)
+                                    end_col = get_column_letter(slot_idx + duration + 1)
                                     merge_range = f"{start_col}{row_num}:{end_col}{row_num}"
                                     merge_ranges.append((merge_range, cell_fill))
                         

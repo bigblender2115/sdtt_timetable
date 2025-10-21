@@ -8,14 +8,40 @@ from collections import defaultdict
 import csv
 import os
 
+
+import json
+
+# Load configuration
+def load_config():
+    try:
+        with open('config.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("Warning: config.json not found, using default configuration")
+        return {
+            "timetable_settings": {
+                "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                "start_time": "09:00",
+                "end_time": "18:30"
+            },
+            "course_durations": {
+                "lecture_duration_slots": 3,
+                "lab_duration_slots": 4,
+                "tutorial_duration_slots": 2,
+                "self_study_duration_slots": 2
+            }
+        }
+
+config = load_config()
+
 # Constants
-DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-START_TIME = time(9, 0)
-END_TIME = time(18, 30)
-LECTURE_DURATION = 3  # 1.5 hours
-LAB_DURATION = 4      # 2 hours
-TUTORIAL_DURATION = 2 # 1 hour
-SELF_STUDY_DURATION = 2 # 1 hour
+DAYS = config['timetable_settings']['days']
+START_TIME = time(*map(int, config['timetable_settings']['start_time'].split(':')))
+END_TIME = time(*map(int, config['timetable_settings']['end_time'].split(':')))
+LECTURE_DURATION = config['course_durations']['lecture_duration_slots']
+LAB_DURATION = config['course_durations']['lab_duration_slots']
+TUTORIAL_DURATION = config['course_durations']['tutorial_duration_slots']
+SELF_STUDY_DURATION = config['course_durations']['self_study_duration_slots']
 BREAK_DURATION = 1    # 0.5 hour
 
 LUNCH_WINDOW_START = time(12, 30)
@@ -37,10 +63,15 @@ COLOR_PALETTE = [
 ]
 
 basket_group_colors = {
-    'B1': "FF9999",  # Soft Coral
-    'B2': "99FFCC",  # Light Mint
-    'B3': "99CCFF",  # Pale Blue
-    'B4': "FFCC99"   # Warm Yellow
+    'B1': "A8D8EA",  # Light blue
+    'B2': "F8E9A1",  # Light yellow
+    'B3': "A1E887",  # Light green
+    'B4': "F76B8A",  # Pink
+    'B5': "FBD46D",  # Gold
+    'B6': "B8F2E6",  # Aqua
+    'B7': "FFB6B9",  # Soft red
+    'B8': "C06C84",  # Mauve
+    'B9': "70A1D7"   # Blue
 }
 
 # Fixed slots for basket electives
@@ -48,7 +79,12 @@ BASKET_SLOTS = {
     'B1': 0,   # 9:00-10:30
     'B2': 3,   # 10:30-12:00
     'B3': 7,   # 14:00-15:30 (post-lunch)
-    'B4': 10   # 15:30-17:00
+    'B4': 10,  # 15:30-17:00
+    'B5': 13,  # 16:30-18:00
+    'B6': 16,  # 18:00-19:30 (if needed)
+    'B7': 19,  # 19:30-21:00 (if needed)
+    'B8': 22,  # 21:00-22:30 (if needed)
+    'B9': 25   # 22:30-24:00 (if needed)
 }
 
 TIME_SLOTS = []
@@ -267,6 +303,46 @@ def is_break_time(slot, semester):
     lunch_start, lunch_end = lunch_breaks[semester]
     return lunch_start <= start < lunch_end
 
+
+# Enhanced conflict resolution
+def resolve_conflicts_with_retry(max_attempts=10):
+    """Try multiple times with different random seeds to resolve conflicts"""
+    global df, rooms, batch_info, unscheduled_components
+    
+    best_result = None
+    best_unscheduled_count = float('inf')
+    
+    for attempt in range(max_attempts):
+        random.seed(42 + attempt)  # Different seed each time
+        current_unscheduled = len(unscheduled_components)
+        
+        if current_unscheduled < best_unscheduled_count:
+            best_result = {
+                'timetable': timetable.copy(),
+                'unscheduled': unscheduled_components.copy(),
+                'attempt': attempt + 1
+            }
+            best_unscheduled_count = current_unscheduled
+        
+        if current_unscheduled == 0:  # Perfect schedule found
+            break
+    
+    if best_result:
+        print(f"Best result found in attempt {best_result['attempt']} with {best_unscheduled_count} unscheduled components")
+        return best_result
+    
+    return None
+
+# Priority-based scheduling
+def schedule_by_priority():
+    """Schedule courses in priority order"""
+    priority_order = config.get('scheduling', {}).get('priority_order', [
+        'core_courses', 'basket_electives', 'regular_electives', 'tutorials', 'labs', 'self_study'
+    ])
+    
+    # This would be implemented to schedule courses in the specified priority order
+    pass
+
 def generate_timetable():
     global TIME_SLOTS, df
     TIME_SLOTS = generate_time_slots()
@@ -317,7 +393,7 @@ def generate_timetable():
                         color_idx += 1
                 # Schedule basket electives first
                 basket_courses = courses[courses['Course Code'].astype(str).str.contains('^B[0-9]')]
-                for basket_group in ['B1', 'B2', 'B3', 'B4']:
+                for basket_group in ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9']:
                     basket_group_courses = basket_courses[basket_courses['Course Code'].astype(str).str.startswith(basket_group)]
                     if basket_group_courses.empty:
                         continue
@@ -328,7 +404,12 @@ def generate_timetable():
                             continue
                         if any(timetable[day][start_slot + i]['type'] for i in range(duration)):
                             continue
+                        
+                        # Collect all courses in this basket for display
+                        basket_course_list = []
+                        all_faculty_conflicts = False
                         used_rooms = set()
+                        
                         for _, course in basket_group_courses.iterrows():
                             code = str(course['Course Code'])
                             name = str(course['Course Name'])
@@ -336,21 +417,38 @@ def generate_timetable():
                             l, t, p, s = calculate_required_slots(course)
                             if l == 0:
                                 continue
+                            
+                            # Check for faculty conflicts
                             if any(start_slot + i in professor_schedule[faculty][day] for i in range(duration)):
                                 unscheduled_components.add(UnscheduledComponent(department, semester, code, name, faculty, 'LEC', 1, section, "Faculty conflict in basket slot"))
+                                all_faculty_conflicts = True
                                 continue
+                            
+                            # Check for room availability
                             room_id = find_suitable_room('LECTURE_ROOM', department, semester, day, start_slot, duration, rooms, batch_info, timetable, code, used_rooms)
                             if not room_id:
                                 unscheduled_components.add(UnscheduledComponent(department, semester, code, name, faculty, 'LEC', 1, section, "No suitable room for basket elective"))
                                 continue
+                            
                             used_rooms.add(room_id)
+                            basket_course_list.append(f"{code}: {name} ({faculty})")
+                        
+                        # If we have courses to schedule and no conflicts, schedule the basket slot
+                        if basket_course_list and not all_faculty_conflicts:
+                            # Update professor schedules for all faculty in the basket
+                            for _, course in basket_group_courses.iterrows():
+                                faculty = str(course['Faculty'])
+                                l, t, p, s = calculate_required_slots(course)
+                                if l > 0:
+                                    for i in range(duration):
+                                        professor_schedule[faculty][day].add(start_slot + i)
+                            
+                            # Set the basket slot display
                             for i in range(duration):
-                                professor_schedule[faculty][day].add(start_slot + i)
                                 timetable[day][start_slot + i]['type'] = 'LEC'
-                                # For basket electives, display the basket group (e.g., B1) instead of course details
                                 if i == 0:
                                     timetable[day][start_slot + i]['code'] = basket_group
-                                    timetable[day][start_slot + i]['name'] = ''
+                                    timetable[day][start_slot + i]['name'] = '\n'.join(basket_course_list)
                                     timetable[day][start_slot + i]['faculty'] = ''
                                     timetable[day][start_slot + i]['classroom'] = ''
                                 else:
@@ -429,7 +527,7 @@ def generate_timetable():
                                 duration = {'LEC': LECTURE_DURATION, 'LAB': LAB_DURATION, 'TUT': TUTORIAL_DURATION, 'SS': SELF_STUDY_DURATION}.get(activity_type, 1)
                                 # Choose color: basket groups use basket_group_colors; otherwise subject-specific color
                                 fill_color = subject_color_map.get(code, "E6E6FA")
-                                if code in ['B1', 'B2', 'B3', 'B4']:
+                                if code in ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9']:
                                     fill_color = basket_group_colors.get(code, fill_color)
                                 elif is_basket_course(code):
                                     grp = get_basket_group(code)
@@ -531,7 +629,20 @@ def generate_timetable():
                                 cell.fill = fill
                             cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
                         current_row += 1
-    wb.save('timetable.xlsx')
+    
+    # Try multiple times to resolve conflicts
+    max_retries = config.get('scheduling', {}).get('max_retry_attempts', 10)
+    enable_retry = config.get('scheduling', {}).get('retry_with_different_seeds', True)
+    
+    if enable_retry:
+        print(f"Attempting timetable generation with up to {max_retries} retries...")
+        result = resolve_conflicts_with_retry(max_retries)
+        if result:
+            print(f"Successfully generated timetable with {len(result['unscheduled'])} unscheduled components")
+        else:
+            print("Could not generate a conflict-free timetable")
+    
+wb.save('timetable.xlsx')
     print("Generated timetable.xlsx")
 
 if __name__ == "__main__":

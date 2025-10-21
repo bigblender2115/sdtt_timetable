@@ -45,6 +45,19 @@ LUNCH_WINDOW_START = time(12, 30)  # Lunch breaks can start from 12:30
 LUNCH_WINDOW_END = time(14, 0)    # Last lunch break must end by 14:00 
 LUNCH_DURATION = 60              # Each semester gets 45 min lunch
 
+# Fixed slots for basket electives
+BASKET_SLOTS = {
+    'B1': 0,   # 9:00-10:30
+    'B2': 3,   # 10:30-12:00
+    'B3': 7,   # 14:00-15:30 (post-lunch)
+    'B4': 10,  # 15:30-17:00
+    'B5': 13,  # 16:30-18:00
+    'B6': 16,  # 18:00-19:30 (if needed)
+    'B7': 19,  # 19:30-21:00 (if needed)
+    'B8': 22,  # 21:00-22:30 (if needed)
+    'B9': 25   # 22:30-24:00 (if needed)
+}
+
 # Initialize global variables
 TIME_SLOTS = []
 lunch_breaks = {}  # Global lunch breaks dictionary

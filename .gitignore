@@ -1,6 +1,96 @@
-venv/
+# Python
 __pycache__/
-*.xlsx
-*.pyc
-.pytest_cache/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Data files (keep structure, ignore large files)
+*.xlsx
+*.xls
+data/*.csv
+!data/Combined.csv
+!data/Rooms.csv
+
+# Output files
+output/*.xlsx
+output/*.pdf
+output/*.html
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Configuration backups
+config.json.bak
+*.config.bak
+
+# Performance and profiling
+*.prof
+*.profile
+
+# Documentation builds
+docs/_build/
+docs/build/
+
+# Cache
+.cache/
+*.cache
+
+# Local development
+local_config.json
+test_config.json

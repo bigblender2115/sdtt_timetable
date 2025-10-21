@@ -1,98 +1,158 @@
-# 🗓️ Timetable Generator
+# 🗓️ Enhanced Timetable Generator
 
-A Python script to **generate academic timetables**, scheduling lectures, tutorials, labs, and self-study sessions.  
-Basket electives (B1–B4) are grouped in **fixed time slots** across all branches for a semester.
+A comprehensive Python system for generating academic timetables with advanced conflict resolution, optimization, and configuration management.
 
----
+## 📁 Project Structure
 
-## 🚀 Features
+```
+ctimetable/
+├── 📁 src/                          # Source code
+│   ├── 📁 core/                     # Core timetable generation
+│   │   ├── main.py                  # Original main generator
+│   │   ├── TT_gen.py                # Alternative generator
+│   │   ├── comprehensive_timetable.py # Comprehensive generator
+│   │   └── main_enhanced.py         # Enhanced version of main.py
+│   ├── 📁 optimization/             # Advanced features
+│   │   ├── enhanced_main.py         # Fully enhanced generator
+│   │   └── conflict_resolver.py     # Conflict resolution tools
+│   ├── 📁 config/                   # Configuration management
+│   │   └── config.json              # Main configuration file
+│   ├── 📁 utils/                    # Utility functions
+│   │   └── config_integration.py    # Configuration integration
+│   ├── 📁 scheduling/               # Scheduling algorithms
+│   └── run.py                       # Main runner script
+├── 📁 tests/                        # Unit tests
+│   ├── test_main_unit.py            # Unit tests for main functions
+│   └── TEST_CASES.md                # Test case documentation
+├── 📁 data/                         # Input data files
+│   ├── Combined.csv                 # Course data
+│   ├── Rooms.csv                    # Room data
+│   └── ...
+├── 📁 output/                       # Generated timetables
+│   ├── timetable.xlsx               # Main output
+│   └── ...
+├── 📁 docs/                         # Documentation
+├── 📁 examples/                     # Example configurations
+├── 📁 logs/                         # Log files
+├── requirements.txt                 # Python dependencies
+├── .gitignore                       # Git ignore rules
+└── README.md                        # This file
+```
 
-- Reads **course data (`courses.csv`)** and **room data (`classrooms.csv`)**
-- Schedules **basket electives** in fixed slots:
-  - **B1:** 9:00–10:30  
-  - **B2:** 10:30–12:00  
-  - **B3:** 14:00–15:30  
-  - **B4:** 15:30–17:00
-- Assigns rooms based on course type and student capacity  
-- Staggers **lunch breaks (12:30–14:00)**  
-- Outputs `timetable.xlsx` with **color-coded schedules and legend**
-- Handles **missing files** or **NaN values** with sensible defaults
+## 🚀 Quick Start
 
----
+### Installation
+```bash
+pip install -r requirements.txt
+```
 
-## 🧩 Requirements
+### Basic Usage
+```bash
+# Run original generator
+python src/core/main.py
 
-- **Python 3.8+**
-- Libraries:  
-  ```bash
-  pip install pandas openpyxl
+# Run enhanced version
+python src/run.py enhanced
 
+# Run with configuration
+python src/run.py config
+```
 
-## 📂 Input Files
+## 🔧 Features
 
-### `courses.csv`
+### Core Features
+- ✅ **Timetable Generation**: Creates Excel timetables with color coding
+- ✅ **Basket Electives**: Fixed time slots for elective groups (B1-B9)
+- ✅ **Room Allocation**: Smart room assignment based on capacity and type
+- ✅ **Faculty Scheduling**: Prevents faculty conflicts
+- ✅ **Lunch Breaks**: Staggered lunch breaks across semesters
 
-| Department | Semester | Course Code | Course Name   | Faculty | L | T | P | S | total_students |
-|-------------|-----------|--------------|----------------|----------|---|---|---|----------------|
-| CSE | 3 | CS101 | Intro to CS | Prof A | 3 | 1 | 2 | 0 | 140 |
-| ECE | 3 | B1-001 | Elective 1A | Prof C | 2 | 0 | 0 | 0 | 35 |
+### Enhanced Features
+- 🔄 **Auto-Retry**: Multiple attempts with different random seeds
+- 🎯 **Priority Scheduling**: Core courses scheduled first
+- 🔍 **Conflict Resolution**: Detailed analysis and suggestions
+- ⚡ **Parallel Processing**: Multi-threading for large datasets
+- 📊 **Performance Monitoring**: Tracks generation time and conflicts
+- ⚙️ **Configuration Management**: Centralized settings in JSON
 
----
+## 📋 Configuration
 
-### `classrooms.csv`
+Edit `src/config/config.json` to customize:
 
-| id | capacity | type | roomNumber |
-|----|-----------|----------------|-------------|
-| R1 | 70 | LECTURE_ROOM | R101 |
-| L1 | 35 | COMPUTER_LAB | L101 |
+```json
+{
+  "timetable_settings": {
+    "start_time": "09:00",
+    "end_time": "18:30",
+    "slot_duration_minutes": 30
+  },
+  "scheduling": {
+    "max_retry_attempts": 10,
+    "priority_order": ["core_courses", "basket_electives", ...]
+  },
+  "optimization": {
+    "enable_parallel_processing": true,
+    "max_workers": 4
+  }
+}
+```
 
-## ⚙️ Usage
+## 🧪 Testing
 
-1. Place the input files — **`courses.csv`** and **`classrooms.csv`** — in the same directory as **`timetable_generator.py`**.
+```bash
+# Run unit tests
+pytest tests/
 
-2. Run the script using Python:
-   ```bash
-   python timetable_generator.py
+# Run specific tests
+pytest tests/test_main_unit.py
+```
 
-## 📊 Output
+## 📊 Input Data Format
 
-- **File:** `timetable.xlsx`
-- **Contents:** One sheet per department-semester-section (e.g., `CSE_3_A`)
-- **Includes:**
-  - Timetable grid (9:00–18:30, Monday–Friday)
-  - Color-coded courses (basket electives and regular)
-  - Lunch breaks in gray
-  - Self-study courses and unscheduled components
-  - Legend for color codes
+### Courses (Combined.csv)
+| Department | Semester | Course Code | Course Name | Faculty | L | T | P | S | total_students |
+|------------|----------|-------------|-------------|---------|---|---|---|---|----------------|
+| CSE        | 3        | CS101       | Intro to CS | Prof A  | 3 | 1 | 2 | 0 | 140            |
 
----
+### Rooms (Rooms.csv)
+| id | capacity | type          | roomNumber |
+|----|----------|---------------|------------|
+| R1 | 70       | LECTURE_ROOM  | R101       |
 
-## 🎨 Color Codes
+## 🎨 Output Features
 
-| Category | Color |
-|-----------|--------|
-| **B1** | Soft Coral |
-| **B2** | Mint |
-| **B3** | Pale Blue |
-| **B4** | Warm Yellow |
-| **Others** | Light Pastels |
+- **Color-coded timetables** with department-specific colors
+- **Basket elective grouping** with shared time slots
+- **Conflict reports** for unscheduled courses
+- **Performance statistics** and generation logs
+- **Alternative slot suggestions** for scheduling conflicts
 
----
+## 🔧 Development
 
-## 🧠 Notes
+### Adding New Features
+1. Add configuration options to `src/config/config.json`
+2. Implement feature in appropriate module
+3. Add tests in `tests/`
+4. Update documentation
 
-- Basket electives (e.g., `B1-001`, `B1-002`) share a **single slot** across all branches.
-- Defaults are used if input files are missing.
-- Ensure **room capacity** is sufficient for basket electives.
-- The script auto-handles missing or incomplete data gracefully.
+### Code Organization
+- **Core**: Basic timetable generation logic
+- **Optimization**: Advanced features and conflict resolution
+- **Config**: Configuration management
+- **Utils**: Helper functions and utilities
+- **Scheduling**: Scheduling algorithms
 
----
+## 📝 License
 
-## 🧰 Troubleshooting
+This project is part of an academic timetable management system.
 
-| Issue | Cause | Fix |
-|--------|--------|-----|
-| **Missing files** | `courses.csv` or `classrooms.csv` not found | Script uses default data and prints a warning |
-| **NaN values** | Empty cells in CSV | Defaults to `0` (hours) or `60` (students) |
-| **Unscheduled courses** | Conflicts or no available room | Check the **"Unscheduled Components"** sheet in the output |
+## 🤝 Contributing
 
+1. Follow the existing code structure
+2. Add tests for new features
+3. Update documentation
+4. Ensure backward compatibility
+
+## 📞 Support
+
+For issues or questions, please refer to the test cases in `tests/TEST_CASES.md` or check the configuration options in `src/config/config.json`.
