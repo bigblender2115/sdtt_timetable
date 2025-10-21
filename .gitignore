@@ -48,18 +48,6 @@ htmlcov/
 logs/
 *.log.*
 
-# Data files (keep structure, ignore large files)
-*.xlsx
-*.xls
-data/*.csv
-!data/Combined.csv
-!data/Rooms.csv
-
-# Output files
-output/*.xlsx
-output/*.pdf
-output/*.html
-
 # Temporary files
 *.tmp
 *.temp
