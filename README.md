@@ -1,4 +1,4 @@
-# 🗓️ Enhanced Timetable Generator
+# Timetable Generator
 
 A comprehensive Python system for generating academic timetables with advanced conflict resolution, optimization, and configuration management.
 
@@ -67,14 +67,6 @@ python src/run.py config
 - ✅ **Faculty Scheduling**: Prevents faculty conflicts
 - ✅ **Lunch Breaks**: Staggered lunch breaks across semesters
 
-### Enhanced Features
-- 🔄 **Auto-Retry**: Multiple attempts with different random seeds
-- 🎯 **Priority Scheduling**: Core courses scheduled first
-- 🔍 **Conflict Resolution**: Detailed analysis and suggestions
-- ⚡ **Parallel Processing**: Multi-threading for large datasets
-- 📊 **Performance Monitoring**: Tracks generation time and conflicts
-- ⚙️ **Configuration Management**: Centralized settings in JSON
-
 ## 📋 Configuration
 
 Edit `src/config/config.json` to customize:
@@ -126,33 +118,3 @@ pytest tests/test_main_unit.py
 - **Conflict reports** for unscheduled courses
 - **Performance statistics** and generation logs
 - **Alternative slot suggestions** for scheduling conflicts
-
-## 🔧 Development
-
-### Adding New Features
-1. Add configuration options to `src/config/config.json`
-2. Implement feature in appropriate module
-3. Add tests in `tests/`
-4. Update documentation
-
-### Code Organization
-- **Core**: Basic timetable generation logic
-- **Optimization**: Advanced features and conflict resolution
-- **Config**: Configuration management
-- **Utils**: Helper functions and utilities
-- **Scheduling**: Scheduling algorithms
-
-## 📝 License
-
-This project is part of an academic timetable management system.
-
-## 🤝 Contributing
-
-1. Follow the existing code structure
-2. Add tests for new features
-3. Update documentation
-4. Ensure backward compatibility
-
-## 📞 Support
-
-For issues or questions, please refer to the test cases in `tests/TEST_CASES.md` or check the configuration options in `src/config/config.json`.
