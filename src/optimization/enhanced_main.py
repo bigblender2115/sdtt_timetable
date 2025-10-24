@@ -398,11 +398,130 @@ class EnhancedTimetableGenerator:
         logging.info("Timetable generation completed")
     
     def _create_excel_output(self, result: dict, df: pd.DataFrame):
-        """Create Excel output file"""
-        # Implementation would create the Excel file
-        output_file = self.config.config['files']['output_file']
-        logging.info(f"Creating Excel output: {output_file}")
-        # Placeholder - would contain the actual Excel generation logic
+        """Create Excel output file from the generated timetable result"""
+        settings = self.config.config
+        output_file = settings['files']['output_file']
+
+        # Ensure output directory exists
+        out_dir = os.path.dirname(output_file)
+        if out_dir and not os.path.exists(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        # Generate time slots based on config
+        start_h, start_m = map(int, settings['timetable_settings']['start_time'].split(':'))
+        end_h, end_m = map(int, settings['timetable_settings']['end_time'].split(':'))
+        slot_minutes = settings['timetable_settings']['slot_duration_minutes']
+
+        def generate_time_slots():
+            slots = []
+            cur_h, cur_m = start_h, start_m
+            while (cur_h, cur_m) < (end_h, end_m):
+                next_m = cur_m + slot_minutes
+                next_h = cur_h + next_m // 60
+                next_m = next_m % 60
+                slots.append((f"{cur_h:02d}:{cur_m:02d}", f"{next_h:02d}:{next_m:02d}"))
+                cur_h, cur_m = next_h, next_m
+            return slots
+
+        time_slots = generate_time_slots()
+        days = settings['timetable_settings']['days']
+
+        # Build workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Timetable"
+
+        # Header row
+        header = ['Day'] + [f"{s}-{e}" for s, e in time_slots]
+        ws.append(header)
+
+        header_fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+        header_font = Font(bold=True)
+        header_alignment = Alignment(horizontal='center', vertical='center')
+        border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+
+        # Colors
+        activity_colors = self.config.config['colors']['activity_colors']
+
+        timetable = result.get('timetable', {})
+
+        # Write each day row
+        merge_ranges = []
+        for day_idx, day_name in enumerate(days):
+            row_num = day_idx + 2
+            ws.append([day_name])
+
+            for slot_idx in range(len(time_slots)):
+                cell_value = ''
+                cell_fill = None
+
+                slot_data = timetable.get(day_idx, {}).get(slot_idx, {})
+                if slot_data and slot_data.get('type'):
+                    activity_type = slot_data['type']
+                    code = slot_data.get('code', '')
+                    classroom = slot_data.get('classroom', '')
+                    faculty = slot_data.get('faculty', '')
+
+                    # Determine duration by extending while same activity appears
+                    duration = 1
+                    for i in range(slot_idx + 1, min(len(time_slots), slot_idx + 10)):
+                        nxt = timetable.get(day_idx, {}).get(i, {})
+                        if nxt and nxt.get('type') == activity_type and not nxt.get('code'):
+                            duration += 1
+                        else:
+                            break
+
+                    # Fill and value
+                    color_key = 'lecture'
+                    if activity_type == 'LAB':
+                        color_key = 'lab'
+                    elif activity_type == 'TUT':
+                        color_key = 'tutorial'
+                    elif activity_type == 'SS':
+                        color_key = 'self_study'
+
+                    fill_color = activity_colors.get({
+                        'LEC': 'lecture', 'LAB': 'lab', 'TUT': 'tutorial', 'SS': 'self_study'
+                    }.get(activity_type, 'lecture'), 'E6E6FA')
+
+                    cell_fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
+                    cell_value = f"{code} {activity_type}\n{classroom}\n{faculty}" if code else ''
+
+                    if duration > 1:
+                        start_col = get_column_letter(slot_idx + 2)
+                        end_col = get_column_letter(slot_idx + duration + 1)
+                        merge_ranges.append((f"{start_col}{row_num}:{end_col}{row_num}", cell_fill, row_num, slot_idx + 2))
+
+                cell = ws.cell(row=row_num, column=slot_idx + 2, value=cell_value)
+                if cell_fill:
+                    cell.fill = cell_fill
+                cell.border = border
+                cell.alignment = Alignment(wrap_text=True, vertical='center', horizontal='center')
+
+            # Set border and alignment for day label
+            ws.cell(row=row_num, column=1).border = border
+            ws.cell(row=row_num, column=1).alignment = Alignment(horizontal='center', vertical='center')
+
+        # Perform merges after filling
+        for merge_range, fill, row_num, col_start in merge_ranges:
+            ws.merge_cells(merge_range)
+            merged_cell = ws.cell(row=row_num, column=col_start)
+            merged_cell.fill = fill
+            merged_cell.alignment = Alignment(wrap_text=True, vertical='center', horizontal='center')
+
+        # Column widths and row heights
+        for col_idx in range(1, len(time_slots) + 2):
+            ws.column_dimensions[get_column_letter(col_idx)].width = 15
+        for row in ws.iter_rows(min_row=2, max_row=len(days) + 1):
+            ws.row_dimensions[row[0].row].height = 40
+
+        wb.save(output_file)
+        logging.info(f"Excel output created: {output_file}")
     
     def _log_performance_stats(self):
         """Log performance statistics"""

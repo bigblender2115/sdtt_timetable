@@ -115,9 +115,9 @@ def generate_time_slots():
 
 # Load data from CSV
 try:
-    df = pd.read_csv('combined.csv')
+    df = pd.read_csv('data/Combined.csv')
 except FileNotFoundError:
-    print("Error: File 'combined.csv' not found in the current directory")
+    print("Error: File 'data/Combined.csv' not found in the current directory")
     exit()
 
 def is_break_time(slot):
@@ -906,24 +906,38 @@ def generate_all_timetables():
             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                top=Side(style='thin'), bottom=Side(style='thin'))
 
-    # Save the workbook
-    wb.save("timetable_all_departments.xlsx")
-    print("Combined timetable for all departments and semesters saved as timetable_all_departments.xlsx")
+    # Save the workbook to output folder
+    os.makedirs('output', exist_ok=True)
+    output_path = 'output/timetable_all_departments.xlsx'
+    wb.save(output_path)
+    print(f"Combined timetable for all departments and semesters saved as {output_path}")
     
-    return ["timetable_all_departments.xlsx"]
+    return [output_path]
 
 def check_unscheduled_courses():
     """Check and print courses that are not scheduled according to their L-T-P-S requirements"""
+    df = None
+    for path in ['data/Combined.csv', 'Combined.csv', 'data/combined.csv', 'combined.csv']:
+        try:
+            df = pd.read_csv(path)
+            break
+        except FileNotFoundError:
+            continue
+    
+    if df is None:
+        print("Error: Combined.csv not found")
+        return
+    
     try:
-        df = pd.read_csv('combined.csv')
         
         # Check if timetable file exists first
-        if not os.path.exists('timetable_all_departments.xlsx'):
-            print("Warning: timetable_all_departments.xlsx not found. Run generate_all_timetables() first.")
+        timetable_path = 'output/timetable_all_departments.xlsx'
+        if not os.path.exists(timetable_path):
+            print(f"Warning: {timetable_path} not found. Run generate_all_timetables() first.")
             return
 
         # Load the generated timetable
-        wb = pd.ExcelFile('timetable_all_departments.xlsx')
+        wb = pd.ExcelFile(timetable_path)
         
         # Dictionary to track scheduled hours for each course
         scheduled_hours = defaultdict(lambda: {'L': 0, 'T': 0, 'P': 0, 'S': 0})
@@ -1183,10 +1197,12 @@ def check_unscheduled_courses():
                     print(f"  Found as: {course['Found As']}")
                 print(f"  Possible Reasons: {course['Reasons']}\n")
             
-            # Create Excel file with unscheduled courses
+            # Create Excel file with unscheduled courses in output folder
+            os.makedirs('output', exist_ok=True)
+            output_path = 'output/unscheduled_courses.xlsx'
             unscheduled_df = pd.DataFrame(unscheduled_courses)
-            unscheduled_df.to_excel('unscheduled_courses.xlsx', index=False)
-            print("Details saved to 'unscheduled_courses.xlsx'")
+            unscheduled_df.to_excel(output_path, index=False)
+            print(f"Details saved to '{output_path}'")
         else:
             print("\n=== ALL COURSES FULLY SCHEDULED ===")
             print("All courses have been scheduled according to their L-T-P-S requirements.")
@@ -1200,7 +1216,8 @@ def generate_faculty_timetables():
     """Generate timetables for all faculty members in a single Excel file"""
     try:
         # Load the generated timetable
-        wb = pd.ExcelFile('timetable_all_departments.xlsx')
+        timetable_path = 'output/timetable_all_departments.xlsx'
+        wb = pd.ExcelFile(timetable_path)
         
         # Dictionary to track faculty schedules
         faculty_schedules = {}
@@ -1208,11 +1225,16 @@ def generate_faculty_timetables():
         print("Processing timetable sheets to extract faculty schedules...")
         
         # Load courses data for reference
-        try:
-            courses_data = pd.read_csv('combined.csv')
-        except Exception as e:
-            print(f"Warning: Could not load combined.csv for reference: {e}")
-            courses_data = None
+        courses_data = None
+        for path in ['data/Combined.csv', 'Combined.csv', 'data/combined.csv', 'combined.csv']:
+            try:
+                courses_data = pd.read_csv(path)
+                break
+            except FileNotFoundError:
+                continue
+        
+        if courses_data is None:
+            print("Warning: Could not load Combined.csv for reference")
         
         # Process each sheet in the timetable workbook
         for sheet_name in wb.sheet_names:
@@ -1441,9 +1463,11 @@ def generate_faculty_timetables():
             if i % 10 == 0:  # Print progress every 10 faculty
                 print(f"Generated {i+1}/{len(faculty_schedules)} faculty worksheets")
         
-        # Save the workbook
-        faculty_wb.save("all_faculty_timetables.xlsx")
-        print(f"All {len(faculty_schedules)} faculty timetables saved in 'all_faculty_timetables.xlsx'")
+        # Save the workbook to output folder
+        os.makedirs('output', exist_ok=True)
+        output_path = 'output/all_faculty_timetables.xlsx'
+        faculty_wb.save(output_path)
+        print(f"All {len(faculty_schedules)} faculty timetables saved in '{output_path}'")
         
     except Exception as e:
         print(f"Error generating faculty timetables: {e}")
@@ -1600,7 +1624,8 @@ def generate_individual_faculty_timetable(faculty, schedule):
     """Generate a timetable for a single faculty member"""
     # Sanitize faculty name for file name
     filename = sanitize_filename(faculty)
-    file_path = os.path.join('faculty_timetables', f"timetable_{filename}.xlsx")
+    os.makedirs('output/faculty_timetables', exist_ok=True)
+    file_path = os.path.join('output/faculty_timetables', f"timetable_{filename}.xlsx")
     
     # Create a new workbook
     wb = Workbook()
@@ -1791,28 +1816,53 @@ def is_break_time(slot, semester=None):
 def load_rooms():
     """Load room information from CSV file"""
     rooms = {}
-    try:
-        with open('rooms.csv', 'r') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                rooms[row['id']] = {
-                    'capacity': int(row['capacity']),
-                    'type': row['type'],
-                    'roomNumber': row['roomNumber'],
-                    'schedule': {day: set() for day in range(len(DAYS))}
-                }
-    except FileNotFoundError:
-        print("Warning: rooms.csv not found, using default room allocation")
-        return None
-    return rooms
+    default_rooms = {
+        'R1': {'capacity': 70, 'type': 'LECTURE_ROOM', 'roomNumber': 'R101', 'schedule': {day: set() for day in range(len(DAYS))}},
+        'R2': {'capacity': 70, 'type': 'LECTURE_ROOM', 'roomNumber': 'R102', 'schedule': {day: set() for day in range(len(DAYS))}},
+        'L1': {'capacity': 35, 'type': 'COMPUTER_LAB', 'roomNumber': 'L101', 'schedule': {day: set() for day in range(len(DAYS))}},
+        'L2': {'capacity': 35, 'type': 'COMPUTER_LAB', 'roomNumber': 'L102', 'schedule': {day: set() for day in range(len(DAYS))}},
+        'S1': {'capacity': 120, 'type': 'SEATER_120', 'roomNumber': 'S101', 'schedule': {day: set() for day in range(len(DAYS))}}
+    }
+    # Try data directory first, then fallback to current directory
+    for path in ['data/rooms.csv', 'rooms.csv', 'data/Rooms.csv', 'Rooms.csv']:
+        try:
+            with open(path, 'r') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    rooms[row['id']] = {
+                        'capacity': int(row['capacity']),
+                        'type': row['type'],
+                        'roomNumber': row['roomNumber'],
+                        'schedule': {day: set() for day in range(len(DAYS))}
+                    }
+                return rooms
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            print(f"Warning: Error reading {path}: {e}")
+            continue
+    print("Warning: rooms.csv not found in data/ or current directory, using default room allocation")
+    return default_rooms
 
 def load_batch_data():
     """Load batch information and calculate sections automatically using total_students from combined.csv"""
     batch_info = {}
     
-    # Load batch sizes directly from combined.csv
+    # Load batch sizes directly from Combined.csv
+    df_batch = None
+    for path in ['data/Combined.csv', 'Combined.csv', 'data/combined.csv', 'combined.csv']:
+        try:
+            df_batch = pd.read_csv(path)
+            break
+        except FileNotFoundError:
+            continue
+    
+    if df_batch is None:
+        print("Warning: Combined.csv not found, using default batch sizes")
+        return batch_info
+    
     try:
-        df = pd.read_csv('combined.csv')
+        df = df_batch
         
         # Group by Department and Semester to get total students
         grouped = df.groupby(['Department', 'Semester'])
@@ -1976,8 +2026,17 @@ def find_suitable_room(course_type, department, semester, day, start_slot, durat
     total_students = None
     
     try:
-        # Get total_students from combined.csv for the course
-        df = pd.read_csv('combined.csv')
+        # Get total_students from Combined.csv for the course
+        df = None
+        for path in ['data/Combined.csv', 'Combined.csv', 'data/combined.csv', 'combined.csv']:
+            try:
+                df = pd.read_csv(path)
+                break
+            except FileNotFoundError:
+                continue
+        
+        if df is None:
+            raise FileNotFoundError("Combined.csv not found")
         
         if course_code and not is_basket:
             # For regular courses, get total_students from the course row
@@ -2000,7 +2059,7 @@ def find_suitable_room(course_type, department, semester, day, start_slot, durat
             if dept_info:
                 total_students = dept_info['section_size']
     except Exception as e:
-        print(f"Warning: Error getting total_students from combined.csv: {e}")
+        print(f"Warning: Error getting total_students from Combined.csv: {e}")
     
     # If we have total_students, use it, otherwise fallback to batch_info
     if total_students:
@@ -2376,7 +2435,10 @@ def unscheduled_reason(course, department, semester, professor_schedule, rooms, 
     if faculty_slots_used > 20:  # Threshold: 10 hours of teaching per week
         return f"Faculty '{faculty}' already has {faculty_slots_used/2:.1f} hours of teaching scheduled"
     
-    # Check room availability issues
+    # Check room availability issues (handle None rooms)
+    if rooms is None:
+        return "No room data available for scheduling"
+    
     if component_type == 'LAB':
         lab_rooms_available = False
         for _, room in rooms.items():
